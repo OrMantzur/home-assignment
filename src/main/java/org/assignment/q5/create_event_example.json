@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "eventId": "uuid-1111",
+    "eventType": "ENTITY_CREATED",
+    "timestamp": 1709123456789,
+    "version": 1
+  },
+  "payload": {
+    "id": "prod_101",
+    "name": "Gaming Laptop X1",
+    "description": "High end laptop with GPU...",
+    "price": 2500.00,
+    "stock": 50,
+    "isActive": true
+  }
+}

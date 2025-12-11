@@ -1,0 +1,12 @@
+{
+  "meta": {
+    "eventId": "uuid-2222",
+    "eventType": "ENTITY_UPDATED",
+    "timestamp": 1709123499999,
+    "version": 2
+  },
+  "payload": {
+    "id": "prod_101",
+    "price": 2200.00
+  }
+}

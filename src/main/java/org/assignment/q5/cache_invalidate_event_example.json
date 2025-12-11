@@ -1,0 +1,7 @@
+{
+  "type": "CACHE_INVALIDATE",
+  "payload": {
+    "id": 1,
+    "reason": "manual_admin_action"
+  }
+}
