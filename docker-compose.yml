@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  anomaly-detector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anomaly-detector
+    ports:
+      - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      # Increased to 80% to give the Heap ~410MB out of 512MB
+      - JAVA_OPTS=-XX:InitialRAMPercentage=75.0 -XX:MaxRAMPercentage=75.0
+    restart: on-failure
