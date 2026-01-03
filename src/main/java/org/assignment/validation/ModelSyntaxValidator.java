@@ -10,6 +10,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Validator for checking the syntax of APIModelsDTO objects.
@@ -21,14 +22,21 @@ import java.util.List;
 public class ModelSyntaxValidator implements Validator {
 
     public static final String API_MODELS_DTO_FIELD_NAME = "apiModelsDTO";
+    private static final Set<String> ALLOWED_METHODS = Set.of(
+            "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"
+    );
 
     private final int maxApiParam;
     private final int maxApiParamType;
+    private final int maxStringLength;
 
     public ModelSyntaxValidator(@Value("${app.model-controller.max-api-param}") int maxApiParam,
-                                @Value("${app.model-controller.max-api-param-type}") int maxApiParamType) {
+                                @Value("${app.model-controller.max-api-param-type}") int maxApiParamType,
+                                @Value("${app.model-controller.max-string-length}") int maxStringLength
+    ) {
         this.maxApiParam = maxApiParam;
         this.maxApiParamType = maxApiParamType;
+        this.maxStringLength = maxStringLength;
     }
 
     @Override
@@ -67,15 +75,26 @@ public class ModelSyntaxValidator implements Validator {
         String modelPath = String.format("%s[%d]", API_MODELS_DTO_FIELD_NAME, index);
 
         // 1. Validate Path
+        // we can also add security checks for this string
         if (!StringUtils.hasText(model.getPath())) {
             errors.rejectValue(String.format("%s.path", modelPath), "field.required",
                     String.format("Model at index %d is missing 'path'", index));
+        } else if (model.getPath().length() > maxStringLength) {
+            errors.rejectValue(String.format("%s.path", modelPath), "field.length",
+                    String.format("Model at index %d path exceeds maximum length of %d", index, maxStringLength));
         }
 
         // 2. Validate Method
         if (!StringUtils.hasText(model.getMethod())) {
             errors.rejectValue(String.format("%s.method", modelPath), "field.required",
                     String.format("Model at index %d is missing 'method'", index));
+        } else {
+            String method = model.getMethod().toUpperCase().trim();
+            if (!ALLOWED_METHODS.contains(method)) {
+                errors.rejectValue(String.format("%s.method", modelPath), "field.invalid",
+                        String.format("Model at index %d has an invalid HTTP method: '%s'. Allowed methods are: %s",
+                                index, model.getMethod(), ALLOWED_METHODS));
+            }
         }
 
         // 3. Validate Params
@@ -109,8 +128,10 @@ public class ModelSyntaxValidator implements Validator {
             if (!StringUtils.hasText(param.getName())) {
                 errors.rejectValue(String.format("%s.name", paramPath), "field.required",
                         String.format("%s is missing 'name'", paramPath));
+            } else if (param.getName().length() > maxStringLength) {
+                errors.rejectValue(String.format("%s.name", paramPath), "field.length",
+                        String.format("%s name exceeds maximum length of %d", paramPath, maxStringLength));
             }
-
             validateTypes(param.getTypes(), paramPath, errors);
         }
     }
