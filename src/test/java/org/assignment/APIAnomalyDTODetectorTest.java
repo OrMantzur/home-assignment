@@ -2,8 +2,9 @@ package org.assignment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assignment.model.APIModelDTO;
-import org.assignment.model.APIModelsDTO;
-import org.assignment.model.DetectionDTO;
+import org.assignment.model.KeyValueObjectDTO;
+import org.assignment.model.RequestDTO;
+import org.assignment.model.KeyValueStringDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -49,25 +49,25 @@ class APIAnomalyDTODetectorTest {
     @Test
     void testValidDetectionFlows() throws Exception {
         // Scenario 1: Valid Login (Body Check)
-        DetectionDTO validLogin = new DetectionDTO();
+        RequestDTO validLogin = new RequestDTO();
         validLogin.setMethod("POST");
         validLogin.setPath("/api/login");
-        validLogin.setBody(Map.of(
-                "username", "john_doe", // Quoted String
-                "password", "secret123", // Quoted String
-                "is_admin", true             // Raw Boolean
+        validLogin.setBody(List.of(
+                new KeyValueObjectDTO("username", "john_doe"), // Quoted String
+                new KeyValueObjectDTO("password", "secret123"), // Quoted String
+                new KeyValueObjectDTO("is_admin", "true")             // Raw Boolean
         ));
 
         sendAndExpectValid(validLogin);
 
         // Scenario 2: Valid Payment (Header & Query Param Check)
-        DetectionDTO validPayment = new DetectionDTO();
+        RequestDTO validPayment = new RequestDTO();
         validPayment.setMethod("POST");
         validPayment.setPath("/api/payment");
-        validPayment.setQueryParams(Map.of("amount", "500")); // Raw Int
-        validPayment.setHeaders(Map.of(
-                "X-Transaction-ID", "550e8400-e29b-41d4-a716-446655440000", // Quoted UUID
-                "X-Auth-Token", "Bearer myToken123"                         // Quoted Auth-Token
+        validPayment.setQueryParams(List.of(new KeyValueStringDTO("amount", "500"))); // Raw Int
+        validPayment.setHeaders(List.of(
+                new KeyValueStringDTO("X-Transaction-ID", "550e8400-e29b-41d4-a716-446655440000"), // Quoted UUID
+                new KeyValueStringDTO("X-Auth-Token", "Bearer myToken123")                         // Quoted Auth-Token
         ));
 
         sendAndExpectValid(validPayment);
@@ -76,7 +76,7 @@ class APIAnomalyDTODetectorTest {
     @Test
     void testAnomalyDetectionFlows() throws Exception {
         // Scenario 1: Unknown Endpoint (Shadow API)
-        DetectionDTO unknownPath = new DetectionDTO();
+        RequestDTO unknownPath = new RequestDTO();
         unknownPath.setMethod("DELETE");
         unknownPath.setPath("/api/database/drop");
 
@@ -87,10 +87,10 @@ class APIAnomalyDTODetectorTest {
                 .andExpect(jsonPath("$[0].type").value("UNKNOWN_ENDPOINT"));
 
         // Scenario 2: Missing Required Field (Body)
-        DetectionDTO missingPass = new DetectionDTO();
+        RequestDTO missingPass = new RequestDTO();
         missingPass.setMethod("POST");
         missingPass.setPath("/api/login");
-        missingPass.setBody(Map.of("username", "hacker")); // Missing 'password'
+        missingPass.setBody(List.of(new KeyValueObjectDTO("username", "hacker"))); // Missing 'password'
 
         mockMvc.perform(post("/api/detection/validate")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -99,13 +99,13 @@ class APIAnomalyDTODetectorTest {
                 .andExpect(jsonPath("$[0].type").value("MISSING_BODY"));
 
         // Scenario 3: Type Mismatch (Header UUID)
-        DetectionDTO badUuid = new DetectionDTO();
+        RequestDTO badUuid = new RequestDTO();
         badUuid.setMethod("POST");
         badUuid.setPath("/api/payment");
-        badUuid.setQueryParams(Map.of("amount", "100"));
-        badUuid.setHeaders(Map.of(
-                "X-Auth-Token", "ok",
-                "X-Transaction-ID", "not-a-uuid-just-string" // Quoted but invalid content
+        badUuid.setQueryParams(List.of(new KeyValueStringDTO("amount", "100")));
+        badUuid.setHeaders(List.of(
+                new KeyValueStringDTO("X-Auth-Token", "ok"),
+                new KeyValueStringDTO("X-Transaction-ID", "not-a-uuid-just-string") // Quoted but invalid content
         ));
 
         mockMvc.perform(post("/api/detection/validate")
@@ -118,23 +118,23 @@ class APIAnomalyDTODetectorTest {
     @Test
     void testPolymorphismValidation() throws Exception {
         // Case A: flexible_id as INT (Valid)
-        DetectionDTO detectionAsInt = new DetectionDTO();
+        RequestDTO detectionAsInt = new RequestDTO();
         detectionAsInt.setMethod("GET");
         detectionAsInt.setPath("/api/search");
-        detectionAsInt.setQueryParams(Map.of(
-                "q", "shoes",
-                "flexible_id", "12345" // Raw Int
+        detectionAsInt.setQueryParams(List.of(
+                new KeyValueStringDTO("q", "shoes"),
+                new KeyValueStringDTO("flexible_id", "12345") // Raw Int
         ));
 
         sendAndExpectValid(detectionAsInt);
 
         // Case B: flexible_id as STRING (Valid)
-        DetectionDTO detectionAsString = new DetectionDTO();
+        RequestDTO detectionAsString = new RequestDTO();
         detectionAsString.setMethod("GET");
         detectionAsString.setPath("/api/search");
-        detectionAsString.setQueryParams(Map.of(
-                "q", "shoes",
-                "flexible_id", "SKU-999" // Quoted String
+        detectionAsString.setQueryParams(List.of(
+                new KeyValueStringDTO("q", "shoes"),
+                new KeyValueStringDTO("flexible_id", "SKU-999") // Quoted String
         ));
 
         sendAndExpectValid(detectionAsString);
@@ -143,16 +143,14 @@ class APIAnomalyDTODetectorTest {
     @Test
     void shouldFailWhenBatchSizeExceedsLimit() throws Exception {
         List<APIModelDTO> hugeList = java.util.Collections.nCopies(1001, new APIModelDTO());
-        APIModelsDTO request = new APIModelsDTO();
-        request.setApiModelsDTO(hugeList);
 
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(hugeList)))
                 .andExpect(status().isPayloadTooLarge());
     }
 
-    private void sendAndExpectValid(DetectionDTO detection) throws Exception {
+    private void sendAndExpectValid(RequestDTO detection) throws Exception {
         mockMvc.perform(post("/api/detection/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(detection)))

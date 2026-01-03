@@ -3,6 +3,7 @@ package org.assignment.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.assignment.exception.AppErrorCode;
 import org.assignment.exception.InvalidModelsControllerException;
+import org.assignment.model.APIModelDTO;
 import org.assignment.model.APIModelsDTO;
 import org.assignment.service.ModelService;
 import org.assignment.validation.ModelSyntaxValidator;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -46,15 +48,15 @@ public class ModelController {
      * @return HTTP 200 OK if models are ingested successfully.
      */
     @PostMapping("/api/models")
-    public ResponseEntity<Void> loadModels(@RequestBody APIModelsDTO apiModelsDTO, BindingResult bindingResult) {
+    public ResponseEntity<Void> loadModels(@RequestBody List<APIModelDTO> apiModelDTOList) {
         // Pre-validation Checks
-        if (apiModelsDTO == null || apiModelsDTO.getApiModelsDTO() == null || apiModelsDTO.getApiModelsDTO().isEmpty()) {
+        if (apiModelDTOList == null || apiModelDTOList.isEmpty()) {
             log.warn("Received empty model list");
             throw new InvalidModelsControllerException(AppErrorCode.EMPTY_MODEL_LIST, "Received list size: 0");
         }
 
         // Check for maximum allowed models per request
-        int modelListSize = apiModelsDTO.getApiModelsDTO().size();
+        int modelListSize = apiModelDTOList.size();
         if (modelListSize > maxModelsPerRequest) {
             String errorMsg = String.format("Batch size %d exceeds the maximum allowed limit of %d", modelListSize, maxModelsPerRequest);
             log.warn("Rejected large batch: {}", errorMsg);
@@ -63,6 +65,9 @@ public class ModelController {
 
         // Run our Custom Validation
         // This populates 'bindingResult' with any errors found in the list
+        APIModelsDTO apiModelsDTO = new APIModelsDTO();
+        apiModelsDTO.setApiModelsDTO(apiModelDTOList);
+        BindingResult bindingResult = new org.springframework.validation.BeanPropertyBindingResult(apiModelsDTO, "apiModelsDTO");
         modelSyntaxValidator.validate(apiModelsDTO, bindingResult);
 
         // 2. Check for Errors

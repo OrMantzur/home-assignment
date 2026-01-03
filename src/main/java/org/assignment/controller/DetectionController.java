@@ -3,8 +3,7 @@ package org.assignment.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.assignment.exception.AppErrorCode;
 import org.assignment.exception.InvalidDetectionControllerException;
-import org.assignment.model.AnomalyDTO;
-import org.assignment.model.DetectionDTO;
+import org.assignment.model.*;
 import org.assignment.service.DetectionService;
 import org.assignment.validation.DetectionSyntaxValidator;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -38,14 +38,14 @@ public class DetectionController {
     /**
      * Endpoint to validate an incoming API request for anomalies.
      *
-     * @param detectionDTO     The detectionDTO entry containing request details.
-     * @param bindingResult The binding result to capture validation errors.
+     * @param requestDTO The detectionDTO entry containing request details.
      * @return A list of detected anomalies (empty if none).
      */
     @PostMapping("/validate")
-    public ResponseEntity<List<AnomalyDTO>> validateDetection(@RequestBody DetectionDTO detectionDTO,
-                                                              BindingResult bindingResult) {
+    public ResponseEntity<List<AnomalyDTO>> validateDetection(@RequestBody RequestDTO requestDTO) {
         // Validation phase
+        DetectionDTO detectionDTO = mapToDetectionDTO(requestDTO);
+        BindingResult bindingResult = new org.springframework.validation.BeanPropertyBindingResult(detectionDTO, "detectionDTO");
         validator.validate(detectionDTO, bindingResult);
 
         // Check for validation errors
@@ -63,6 +63,32 @@ public class DetectionController {
 
         // Return detected anomalies
         return ResponseEntity.ok(anomalies);
+    }
+
+    private DetectionDTO mapToDetectionDTO(RequestDTO requestDTO) {
+        DetectionDTO internalDetectionDTO = new DetectionDTO();
+        internalDetectionDTO.setPath(requestDTO.getPath());
+        internalDetectionDTO.setMethod(requestDTO.getMethod());
+        internalDetectionDTO.setHeaders(convertListToStringMap(requestDTO.getHeaders()));
+        internalDetectionDTO.setQueryParams(convertListToStringMap(requestDTO.getQueryParams()));
+        internalDetectionDTO.setBody(convertListToObjectMap(requestDTO.getBody()));
+        return internalDetectionDTO;
+    }
+
+    private Map<String, String> convertListToStringMap(List<KeyValueStringDTO> list) {
+        if (list == null) {
+            return Map.of();
+        }
+        return list.stream()
+                .collect(Collectors.toMap(KeyValueStringDTO::getName, KeyValueStringDTO::getValue));
+    }
+
+    private Map<String, Object> convertListToObjectMap(List<KeyValueObjectDTO> list) {
+        if (list == null) {
+            return Map.of();
+        }
+        return list.stream()
+                .collect(Collectors.toMap(KeyValueObjectDTO::getName, KeyValueObjectDTO::getValue));
     }
 
 }

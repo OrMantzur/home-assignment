@@ -1,93 +1,91 @@
-{
-  "models": [
-    {
-      "method": "POST",
-      "path": "/api/login",
-      "query_params": [],
-      "headers": [],
-      "body": [
-        {
-          "name": "username",
-          "types": [
-            "String"
-          ],
-          "required": true
-        },
-        {
-          "name": "password",
-          "types": [
-            "String"
-          ],
-          "required": true
-        },
-        {
-          "name": "is_admin",
-          "types": [
-            "Boolean"
-          ],
-          "required": false
-        }
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/payment",
-      "query_params": [
-        {
-          "name": "amount",
-          "types": [
-            "Int"
-          ],
-          "required": true
-        }
-      ],
-      "headers": [
-        {
-          "name": "X-Transaction-ID",
-          "types": [
-            "UUID"
-          ],
-          "required": true
-        },
-        {
-          "name": "X-Auth-Token",
-          "types": [
-            "String"
-          ],
-          "required": true
-        }
-      ],
-      "body": []
-    },
-    {
-      "method": "GET",
-      "path": "/api/search",
-      "query_params": [
-        {
-          "name": "q",
-          "types": [
-            "String"
-          ],
-          "required": true
-        },
-        {
-          "name": "flexible_id",
-          "types": [
-            "Int",
-            "String"
-          ],
-          "required": true
-        },
-        {
-          "name": "page",
-          "types": [
-            "Int"
-          ],
-          "required": false
-        }
-      ],
-      "headers": [],
-      "body": []
-    }
-  ]
-}
+[
+  {
+    "method": "POST",
+    "path": "/api/login",
+    "query_params": [],
+    "headers": [],
+    "body": [
+      {
+        "name": "username",
+        "types": [
+          "String"
+        ],
+        "required": true
+      },
+      {
+        "name": "password",
+        "types": [
+          "String"
+        ],
+        "required": true
+      },
+      {
+        "name": "is_admin",
+        "types": [
+          "Boolean"
+        ],
+        "required": false
+      }
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/payment",
+    "query_params": [
+      {
+        "name": "amount",
+        "types": [
+          "Int"
+        ],
+        "required": true
+      }
+    ],
+    "headers": [
+      {
+        "name": "X-Transaction-ID",
+        "types": [
+          "UUID"
+        ],
+        "required": true
+      },
+      {
+        "name": "X-Auth-Token",
+        "types": [
+          "String"
+        ],
+        "required": true
+      }
+    ],
+    "body": []
+  },
+  {
+    "method": "GET",
+    "path": "/api/search",
+    "query_params": [
+      {
+        "name": "q",
+        "types": [
+          "String"
+        ],
+        "required": true
+      },
+      {
+        "name": "flexible_id",
+        "types": [
+          "Int",
+          "String"
+        ],
+        "required": true
+      },
+      {
+        "name": "page",
+        "types": [
+          "Int"
+        ],
+        "required": false
+      }
+    ],
+    "headers": [],
+    "body": []
+  }
+]

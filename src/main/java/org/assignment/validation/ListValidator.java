@@ -109,11 +109,10 @@ public class ListValidator implements ObjectValidator {
         if (item.startsWith("\"") && item.endsWith("\"")) {
             item = item.substring(1, item.length() - 1);
             // Must be one of the String-based types defined in the table
-            return ValueType.STRING.isValid(item) || ValueType.DATE.isValid(item) || ValueType.EMAIL.isValid(item) ||
-                    ValueType.UUID.isValid(item) || ValueType.AUTH_TOKEN.isValid(item);
         }
-        // Unquoted: Only raw primitives allowed
-        return ValueType.INT.isValid(item) || ValueType.BOOLEAN.isValid(item);
+        return ValueType.STRING.isValid(item) || ValueType.DATE.isValid(item) || ValueType.EMAIL.isValid(item) ||
+                ValueType.UUID.isValid(item) || ValueType.AUTH_TOKEN.isValid(item)
+                || ValueType.INT.isValid(item) || ValueType.BOOLEAN.isValid(item);
     }
 
 }

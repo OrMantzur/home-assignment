@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assignment.exception.AppErrorCode;
 import org.assignment.model.APIModelDTO;
 import org.assignment.model.APIModelParamDTO;
-import org.assignment.model.APIModelsDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,13 +60,10 @@ class ModelControllerValidationTest {
         // 1. Create Model with Missing Path
         APIModelDTO badModel = new APIModelDTO();
         badModel.setMethod("POST"); // Path is NULL
-        APIModelsDTO apiModelsDTO = new APIModelsDTO();
-        apiModelsDTO.setApiModelsDTO(List.of(badModel));
-
         // 2. Perform Request
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(apiModelsDTO)))
+                        .content(objectMapper.writeValueAsString(List.of(badModel))))
                 .andDo(print()) // Prints response to console for debugging
                 .andExpect(status().isBadRequest()) // Expect 400
                 .andExpect(jsonPath("$.errorCode").value("ERROR-4022")) // INVALID_MODEL_SYNTAX
@@ -81,12 +77,9 @@ class ModelControllerValidationTest {
         badModel.setPath("/api/test");
         // Method is NULL
 
-        APIModelsDTO apiModelsDTO = new APIModelsDTO();
-        apiModelsDTO.setApiModelsDTO(List.of(badModel));
-
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(apiModelsDTO)))
+                        .content(objectMapper.writeValueAsString(List.of(badModel))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value(AppErrorCode.INVALID_MODEL_SYNTAX.getCode()))
                 .andExpect(jsonPath("$.debugMessage").value(org.hamcrest.Matchers.containsString("Model at index 0 is missing 'method'")));
@@ -101,12 +94,10 @@ class ModelControllerValidationTest {
         // Param with missing Name
         APIModelParamDTO badParam = new APIModelParamDTO(null, List.of("String"), true);
         badModel.setQueryParams(List.of(badParam));
-        APIModelsDTO apiModelsDTO = new APIModelsDTO();
-        apiModelsDTO.setApiModelsDTO(List.of(badModel));
 
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(apiModelsDTO)))
+                        .content(objectMapper.writeValueAsString(List.of(badModel))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("ERROR-4022"))
                 .andExpect(jsonPath("$.debugMessage").value(org.hamcrest.Matchers.containsString("apiModelsDTO[0].queryParams[0] is missing 'name'")));
@@ -121,12 +112,10 @@ class ModelControllerValidationTest {
         // Param with Name but Empty Types
         APIModelParamDTO badParam = new APIModelParamDTO("userid", List.of(), true);
         badModel.setHeaders(List.of(badParam));
-        APIModelsDTO apiModelsDTO = new APIModelsDTO();
-        apiModelsDTO.setApiModelsDTO(List.of(badModel));
 
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(apiModelsDTO)))
+                        .content(objectMapper.writeValueAsString(List.of(badModel))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("ERROR-4022"))
                 .andExpect(jsonPath("$.debugMessage").value(org.hamcrest.Matchers.containsString("At least one type is required")));
@@ -141,12 +130,10 @@ class ModelControllerValidationTest {
         model2.setPath("/api/ok");
         model2.setMethod("GET");
         model2.setBody(List.of(new APIModelParamDTO("id", null, true))); // Missing Types
-        APIModelsDTO apiModelsDTO = new APIModelsDTO();
-        apiModelsDTO.setApiModelsDTO(List.of(model1, model2));
 
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(apiModelsDTO)))
+                        .content(objectMapper.writeValueAsString(List.of(model1, model2))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.debugMessage").value(org.hamcrest.Matchers.containsString("Model at index 0 is missing 'path'")))
                 .andExpect(jsonPath("$.debugMessage").value(org.hamcrest.Matchers.containsString("At least one type is required")));
@@ -182,15 +169,13 @@ class ModelControllerValidationTest {
         }
 
         APIModelDTO massiveModel = new APIModelDTO("/api/heavy", "POST", massiveParams, List.of(), List.of());
-        APIModelsDTO apiModelsDTO = new APIModelsDTO();
-        apiModelsDTO.setApiModelsDTO(List.of(massiveModel));
 
 
         // Note: In a real system, we'd expect 413 Payload Too Large or 400 Bad Request
         // If your controller has @Valid with @Size limits, this will fail as expected.
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(apiModelsDTO)))
+                        .content(objectMapper.writeValueAsString(List.of(massiveModel))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -204,12 +189,10 @@ class ModelControllerValidationTest {
         );
 
         APIModelDTO model = new APIModelDTO("/api/test", "POST", List.of(badParam), List.of(), List.of());
-        APIModelsDTO apiModelsDTO = new APIModelsDTO();
-        apiModelsDTO.setApiModelsDTO(List.of(model));
 
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(apiModelsDTO)))
+                        .content(objectMapper.writeValueAsString(List.of(model))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -221,12 +204,10 @@ class ModelControllerValidationTest {
 
         APIModelParamDTO badParam = new APIModelParamDTO("name", List.of(hugeType), true);
         APIModelDTO model = new APIModelDTO("/api/test", "POST", List.of(badParam), List.of(), List.of());
-        APIModelsDTO apiModelsDTO = new APIModelsDTO();
-        apiModelsDTO.setApiModelsDTO(List.of(model));
 
         mockMvc.perform(post("/api/models")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(apiModelsDTO)))
+                        .content(objectMapper.writeValueAsString(List.of(model))))
                 .andExpect(status().isBadRequest());
     }
 
